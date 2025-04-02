@@ -1,5 +1,5 @@
 // Created by 2023/10/12 14:00
-#include "stm32f10x.h"
+#include "core.hpp"
 #include "stm32f10x_conf.h"
 #ifndef MPU6050_H
 #define MPU6050_H
@@ -61,25 +61,7 @@ namespace module{
 
 
 	#define MPU6050_AD0_ON()  GPIO_WriteBit(GPIOB, GPIO_Pin_5,Bit_SET)
-	typedef struct{
-		int16_t accel_x;
-		int16_t accel_y;
-		int16_t accel_z;
-		int16_t temp;
-		int16_t gyro_x;
-		int16_t gyro_y;
-		int16_t gyro_z;
-	}MPU6050Data;
 
-	typedef struct{
-		float accel_X;
-		float accel_Y;
-		float accel_Z;
-		float temp;
-		float gyro_X;
-		float gyro_Y;
-		float gyro_Z;
-    } MPU6050DataUniform;
 
     class MPU6050{
 		private:

@@ -32,17 +32,15 @@ void KalManFilter::SetSamplingTime(uint32_t sampling_time){
  */
 void KalManFilter::CompuEulerAngle(EulerAngles *eulerAngles){
 	mpu6050.GetDataUniform(&_data);
-	Delay_ms(250);
+	Delay_s(_sampling_time);
+    float integral_scope = _sampling_time / 2;
 
     //处理数据
-    // float gyro_x=(data_gyro_x+ data_gyro_x)*_sampling_time/2;
-	// float gyro_y=(data_gyro_y+ data_gyro_y)*_sampling_time/2;
-	// float gyro_z=(data_gyro_z+ data_gyro_z)*_sampling_time/2;
 
 
-	float gyro_x=(_data.gyro_X+ _now_data.gyro_X)*0.125f;
-	float gyro_y=(_data.gyro_X+ _now_data.gyro_Y)*0.125f;
-	float gyro_z=(_data.gyro_X+ _now_data.gyro_Z)*0.125f;
+	float gyro_x=(_data.gyro_X+ _now_data.gyro_X)*integral_scope;
+	float gyro_y=(_data.gyro_X+ _now_data.gyro_Y)*integral_scope;
+	float gyro_z=(_data.gyro_X+ _now_data.gyro_Z)*integral_scope;
 	
 
 
@@ -51,25 +49,17 @@ void KalManFilter::CompuEulerAngle(EulerAngles *eulerAngles){
 	//计算翻滚角变换值 Wx*dealt(t)
 	//计算翻滚角(相对与轴角度)
 
-	// float data_acc_x = mpu_data.accel_x/MPU6050_GYRO;
-	// float data_acc_y = mpu_data.accel_y/MPU6050_GYRO;
-	// float data_acc_z = mpu_data.accel_z/MPU6050_GYRO;
-
-	// float acc_x = ArcTan(data_acc_x / fastInverseSqrt(Square(data_acc_y, 2) + Square(data_acc_z, 2)));
-	// float acc_y = ArcTan(data_acc_y / fastInverseSqrt(Square(data_acc_x, 2) + Square(data_acc_x, 2)));
-	// float acc_z = ArcTan(data_acc_z / fastInverseSqrt(Square(data_acc_x, 2) + Square(data_acc_y, 2)));
+	float acc_x = ArcTan(_data.accel_X / fastInverseSqrt(Square(_data.accel_Y, 2) + Square(_data.accel_Z, 2)));
+	float acc_y = ArcTan(_data.accel_Y / fastInverseSqrt(Square(_data.accel_X, 2) + Square(_data.accel_Z, 2)));
+	float acc_z = ArcTan(_data.accel_Z / fastInverseSqrt(Square(_data.accel_X, 2) + Square(_data.accel_Y, 2)));
 	//--基于加速度计rool_acc
 	//计算翻转角 rool=arctan2(ay,az)
 
 	//--互补滤波融合
 	//roll(翻转角)=A*rool_gyro+(1-A)*roll_acc
-	// eulerAngles->_Euler_X=ALPHA* gyro_x + (1 - ALPHA) * acc_x;
-	// eulerAngles->_Euler_Y=ALPHA* gyro_y + (1 - ALPHA) * acc_y;
-	// eulerAngles->_Euler_Z=ALPHA* gyro_z + (1 - ALPHA) * acc_z;
-
-	eulerAngles->_Euler_X=gyro_x;
-	eulerAngles->_Euler_Y=gyro_y;
-	eulerAngles->_Euler_Z=gyro_z;
+	eulerAngles->_Euler_X=ALPHA* gyro_x + (1 - ALPHA) * acc_x;
+	eulerAngles->_Euler_Y=ALPHA* gyro_y + (1 - ALPHA) * acc_y;
+	eulerAngles->_Euler_Z=ALPHA* gyro_z + (1 - ALPHA) * acc_z;
 	
 	_now_data=_data;
 	//化为弧度

@@ -8,20 +8,21 @@
 
 #include "stm32f10x.h"
 #include "stm32f10x_conf.h"
-#include "Euler.h"
+#include "KalmanFilter.h"
 #include "PWM.h"
 // #include "WQ25.h"
 #include "OLED.h"
 #include "Delay.h"
 #include "math.h"
 using namespace module;
+using namespace core;
 
 int main(){
 
 	// OLED_Init();		//OLED初始化
     // MPU6050 mpu;
     // MPU6050_Data data;
-    EulerAngle euler;
+    KalManFilter euler;
     EulerAngles euler_angles;
 
     /*显示ID号*/
