@@ -15,22 +15,28 @@
  * @return float 
  */
 #include "math.h"
-float Square(float x,uint32_t index){
+
+
+
+int32_t Square(int16_t x){
+    return x * x;
+}
+float Power(float x,int16_t index){
     if(index==0x00){
-        return 1;
-    }else if(index<0x00){
-        float sum=1;
-        for (int i = index; index >0;i--){
+        return 1.0f;
+    }else if(index<0){
+        float sum = 1.0f;
+        for (int16_t i =0 ; i<index;i++){
             sum *= x;
         }
-        return 1/sum;
-    }
-    else{
-        float sum=1;
-        for (int i = index; index >0;i--){
+        return 1.0f/sum;
+    }else{
+        float sum=1.0f;
+        for (int16_t i =0 ; i<index;i++){
             sum *= x;
         }
         return sum;
+
     }
 }
 /**
@@ -81,9 +87,9 @@ float Tan(float x){
 //     return Cos(x);
 // }
 float ArcTan(const float x){
-    float sum = x;
-    for (int i = 0; i < 4; i++) {
-        sum += Square(-1.0f, i) * Square(x, 2 * i + 1) / (2 * i + 1);
+    float sum = 0;
+    for (int i = 0; i <= 2; i++) {
+        sum += Power(-1.0f, i) * Power(x, 2 * i + 1) / (2 * i + 1);
     }
     return sum;
 }
@@ -94,15 +100,20 @@ float ArcTan(const float x){
  * @param x 开平方的数
  * @return float 
  */
-float fastInverseSqrt(float x){
+float fastInverseSqrt(const int32_t x){
+    float z= (float)x;
     union {
         float f;
         uint32_t i;
     }u;
 
-    u.f = x;
+    u.f = z;
     u.i = SUQRT_MATH - (u.i >> 1);
     float y = u.f;
-    y       = y * (1.5 - 0.5 * x * y * y);
+    y = y * (1.5 - 0.5 * z * y * y);
     return y;
+}
+
+int32_t round_x(float x,uint8_t multiple){
+    return x * multiple;
 }

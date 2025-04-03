@@ -47,9 +47,9 @@ void MPU6050::DataInit(){
 	_mpu6050Data->accel_z=0;
 
 	_mpu6050Data->temp=0;
-	_mpu6050Data->gyro_x=0;
-	_mpu6050Data->gyro_y=0;
-	_mpu6050Data->gyro_z=0;
+	_mpu6050Data->gyro_x=0.0f;
+	_mpu6050Data->gyro_y=0.0f;
+	_mpu6050Data->gyro_z=0.0f;
 }
 /**
   * @brief：MPU6050等待事件
@@ -172,11 +172,14 @@ uint8_t MPU6050::GetID(void){
 
 void MPU6050::GetDataUniform(MPU6050DataUniform *data){
     GetData();
-	data->accel_X =_mpu6050Data->gyro_x/MPU6050_GYRO;
-	data->accel_Y= _mpu6050Data->gyro_y/MPU6050_GYRO;
-	data->accel_Z= _mpu6050Data->gyro_z/MPU6050_GYRO;
+	data->accel_X =_mpu6050Data->accel_x;
+	data->accel_Y= _mpu6050Data->accel_y;
+	data->accel_Z= _mpu6050Data->accel_z-2048;
 
-	data->gyro_X =_mpu6050Data->gyro_x/10;
-	data->gyro_Y = _mpu6050Data->gyro_y/10;
-	data->gyro_Z = _mpu6050Data->gyro_z/10;
+
+	data->gyro_X =_mpu6050Data->gyro_x/16.4f;
+	data->gyro_Y = _mpu6050Data->gyro_y/16.4f;
+	data->gyro_Z = _mpu6050Data->gyro_z/16.4f;
+
+	data->temp=_mpu6050Data->temp/340.0f+36.53f;
 }

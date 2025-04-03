@@ -311,7 +311,7 @@
 #else
   #error Unknown compiler
 #endif
-
+#define ARM_MATH_CM3
 
 #define __CMSIS_GENERIC         /* disable NVIC and Systick functions */
 

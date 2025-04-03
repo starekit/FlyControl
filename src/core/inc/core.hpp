@@ -12,9 +12,9 @@ typedef struct{
 }MPU6050Data;
 
 typedef struct{
-    float accel_X;
-    float accel_Y;
-    float accel_Z;
+    int16_t accel_X;
+    int16_t accel_Y;
+    int16_t accel_Z;
     float temp;
     float gyro_X;
     float gyro_Y;
@@ -28,5 +28,10 @@ typedef struct {
     float _Euler_Y;
     float _Euler_Z;
 }EulerAngles;
+typedef struct{
+    int16_t x;
+    int16_t y;
+    int16_t z;
+} Test;
 
 #endif
