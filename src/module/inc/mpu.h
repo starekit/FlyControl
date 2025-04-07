@@ -1,8 +1,8 @@
 // Created by 2023/10/12 14:00
 #include "core.hpp"
 #include "stm32f10x_conf.h"
-#ifndef MPU6050_H
-#define MPU6050_H
+#ifndef MPU_H
+#define MPU_H
 
 
 
@@ -60,10 +60,10 @@ namespace module{
 	#define	MPU_ID			0x75
 
 
-	#define MPU6050_AD0_ON()  GPIO_WriteBit(GPIOB, GPIO_Pin_5,Bit_SET)
+	#define MPU_AD0_ON()  GPIO_WriteBit(GPIOB, GPIO_Pin_5,Bit_SET)
 
 
-    class MPU6050{
+    class MPU{
 		private:
            
             void IICInit(void);
@@ -76,21 +76,21 @@ namespace module{
 
 
 		public:
-		MPU6050Data *_mpu6050Data;
+		MPUData *_mpuData;
 		void GetData();
-			MPU6050(){
-                MPU6050_AD0_ON();
+			MPU(){
+                MPU_AD0_ON();
                 IICInit();
 				MPUInit();
 
-				_mpu6050Data = new MPU6050Data;
+				_mpuData = new MPUData;
                 DataInit();
             }
-			~MPU6050(){
-                delete _mpu6050Data;
+			~MPU(){
+                delete _mpuData;
             }
 			uint8_t GetID(void);
-			void GetDataUniform(MPU6050DataUniform *data);
+			void GetDataUniform(MPUDataUniform *data);
     };
 
 	

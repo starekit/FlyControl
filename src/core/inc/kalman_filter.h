@@ -1,6 +1,6 @@
 #include "math.h"
-#include "Delay.h"
-#include "MPU6050.h"
+#include "delay.h"
+#include "mpu.h"
 #ifndef KALMAN_FILTER_H
 #define KALMAN_FILTER_H
 
@@ -14,8 +14,8 @@ using namespace module;
 	class KalManFilter{
 		
 		private:
-			MPU6050 *mpu6050;
-			MPU6050DataUniform *_data;
+			MPU *mpu;
+			MPUDataUniform *_data;
 
             
             uint32_t _sampling_time;
@@ -38,8 +38,8 @@ using namespace module;
 			_accelEulerAngles =new EulerAngles();
 			_eulerAngles=new EulerAngles();
 
-			_data =new MPU6050DataUniform();
-            mpu6050 =new MPU6050();
+			_data =new MPUDataUniform();
+            mpu =new MPU();
             DataInit();
             test.x = 0;
 			test.y = 0;
@@ -50,7 +50,7 @@ using namespace module;
             delete _eulerAngles;
             delete _gyroEulerAngles;
             delete _accelEulerAngles;
-            delete mpu6050;
+            delete mpu;
         }
 		void CompuEulerAngle();
 		void SetSamplingTime(uint32_t sampling_time);

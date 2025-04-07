@@ -1,4 +1,4 @@
-#include "MPU6050.h"
+#include "mpu.h"
 using namespace module;
 
 /**
@@ -6,7 +6,7 @@ using namespace module;
   * @param：none
   * @return:none
   */
-void MPU6050::IICInit(void){
+void MPU::IICInit(void){
 	/*开启时钟*/
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);		//开启I2C2的时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);		//开启GPIOB的时钟
@@ -32,7 +32,7 @@ void MPU6050::IICInit(void){
 	I2C_Cmd(I2C2, ENABLE);									//使能I2C2，开始运行
 	 
 }
-void MPU6050::MPUInit(void){
+void MPU::MPUInit(void){
 
 	WriteReg(PWR_MGMT_1, 0x80);				//电源管理寄存器1，取消睡眠模式，选择时钟源为X轴陀螺仪
 	WriteReg(PWR_MGMT_2, 0x00);				//电源管理寄存器2，保持默认值0，所有轴均不待机
@@ -42,22 +42,22 @@ void MPU6050::MPUInit(void){
 	WriteReg(ACCEL_CONFIG, 0x18);			//加速度计配置寄存器，选择满量程为±16g	
 }
 
-void MPU6050::DataInit(){
-	_mpu6050Data->accel_x = 0;
-	_mpu6050Data->accel_y=0;
-	_mpu6050Data->accel_z=0;
+void MPU::DataInit(){
+	_mpuData->accel_x = 0;
+	_mpuData->accel_y=0;
+	_mpuData->accel_z=0;
 
-	_mpu6050Data->temp=0;
-	_mpu6050Data->gyro_x=0.0f;
-	_mpu6050Data->gyro_y=0.0f;
-	_mpu6050Data->gyro_z=0.0f;
+	_mpuData->temp=0;
+	_mpuData->gyro_x=0.0f;
+	_mpuData->gyro_y=0.0f;
+	_mpuData->gyro_z=0.0f;
 }
 /**
   * @brief：MPU6050等待事件
   * @param：同I2C_CheckEvent
   * @return:none
   */
-void MPU6050::WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT){
+void MPU::WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT){
 	 uint32_t Timeout;
 	 Timeout = 10000;									//给定超时计数时间
 	 while (I2C_CheckEvent(I2Cx, I2C_EVENT) != SUCCESS)	//循环等待指定事件
@@ -76,7 +76,7 @@ void MPU6050::WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT){
    * @param RegAddress寄存器地址，范围：参考MPU6050手册的寄存器描述
    * @param Data 要写入寄存器的数据，范围：0x00~0xFF
    */
-void MPU6050::WriteReg(uint8_t RegAddress, uint8_t Data){
+void MPU::WriteReg(uint8_t RegAddress, uint8_t Data){
 	I2C_GenerateSTART(I2C2, ENABLE);										//硬件I2C生成起始条件
 	WaitEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT);					//等待EV5
 	
@@ -97,7 +97,7 @@ void MPU6050::WriteReg(uint8_t RegAddress, uint8_t Data){
    * @param：RegAddress 寄存器地址，范围：参考MPU6050手册的寄存器描述
    * @return：读取寄存器的数据，范围：0x00~0xFF
    */
- uint8_t MPU6050::ReadReg(uint8_t RegAddress){
+ uint8_t MPU::ReadReg(uint8_t RegAddress){
 	uint8_t Data;
 	
 	I2C_GenerateSTART(I2C2, ENABLE);										//硬件I2C生成起始条件
@@ -129,7 +129,7 @@ void MPU6050::WriteReg(uint8_t RegAddress, uint8_t Data){
    * @brief 获取MPU6050的ID号
    * @return：MPU6050的ID号
    */
-uint8_t MPU6050::GetID(void){
+uint8_t MPU::GetID(void){
 	return ReadReg(MPU_ID);		//返回WHO_AM_I寄存器的值
 }
  
@@ -139,49 +139,49 @@ uint8_t MPU6050::GetID(void){
    * @param：GyroX GyroY GyroZ 陀螺仪X、Y、Z轴的数据，使用输出参数的形式返回，范围：-32768~32767
    * @return：none
    */
- void MPU6050::GetData(){
+ void MPU::GetData(){
 	// MPU6050_AD0_ON();
 	uint8_t DataH, DataL;						//定义数据高8位和低8位的变量
 	
 	DataH = ReadReg(ACCEL_XOUT_H);				//读取加速度计X轴的高8位数据
 	DataL = ReadReg(ACCEL_XOUT_L);				//读取加速度计X轴的低8位数据
-	_mpu6050Data->accel_x = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
+	_mpuData->accel_x = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
 	
 	DataH = ReadReg(ACCEL_YOUT_H);				//读取加速度计Y轴的高8位数据
 	DataL = ReadReg(ACCEL_YOUT_L);				//读取加速度计Y轴的低8位数据
-	_mpu6050Data->accel_y = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
+	_mpuData->accel_y = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
 	
 	DataH = ReadReg(ACCEL_ZOUT_H);				//读取加速度计Z轴的高8位数据
 	DataL = ReadReg(ACCEL_ZOUT_L);				//读取加速度计Z轴的低8位数据
-	_mpu6050Data->accel_z = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
+	_mpuData->accel_z = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
 	
 	DataH = ReadReg(GYRO_XOUT_H);				//读取陀螺仪X轴的高8位数据
 	DataL = ReadReg(GYRO_XOUT_L);				//读取陀螺仪X轴的低8位数据
-	_mpu6050Data->gyro_x = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
+	_mpuData->gyro_x = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
 	
 	DataH = ReadReg(GYRO_YOUT_H);				//读取陀螺仪Y轴的高8位数据
 	DataL = ReadReg(GYRO_YOUT_L);				//读取陀螺仪Y轴的低8位数据
-	_mpu6050Data->gyro_y = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
+	_mpuData->gyro_y = (DataH << 8) | DataL;		//数据拼接，通过输出参数返回
 	
 	DataH = ReadReg(GYRO_ZOUT_H);				//读取陀螺仪Z轴的高8位数据
 	DataL = ReadReg(GYRO_ZOUT_L);				//读取陀螺仪Z轴的低8位数据
-	_mpu6050Data->gyro_z= (DataH << 8) | DataL;			//数据拼接，通过输出参数返回
+	_mpuData->gyro_z= (DataH << 8) | DataL;			//数据拼接，通过输出参数返回
 
 	DataH = ReadReg(TEMP_OUT_H);
 	DataL = ReadReg(TEMP_OUT_L);
-	_mpu6050Data->temp = (DataH << 8) | DataL;
+	_mpuData->temp = (DataH << 8) | DataL;
 }
 
-void MPU6050::GetDataUniform(MPU6050DataUniform *data){
+void MPU::GetDataUniform(MPUDataUniform *data){
     GetData();
-	data->accel_X =_mpu6050Data->accel_x;
-	data->accel_Y= _mpu6050Data->accel_y;
-	data->accel_Z= _mpu6050Data->accel_z-2048;
+	data->accel_X =_mpuData->accel_x;
+	data->accel_Y= _mpuData->accel_y;
+	data->accel_Z= _mpuData->accel_z-2048;
 
 
-	data->gyro_X =_mpu6050Data->gyro_x/16.4f;
-	data->gyro_Y = _mpu6050Data->gyro_y/16.4f;
-	data->gyro_Z = _mpu6050Data->gyro_z/16.4f;
+	data->gyro_X =_mpuData->gyro_x/16.4f;
+	data->gyro_Y = _mpuData->gyro_y/16.4f;
+	data->gyro_Z = _mpuData->gyro_z/16.4f;
 
-	data->temp=_mpu6050Data->temp/340.0f+36.53f;
+	data->temp=_mpuData->temp/340.0f+36.53f;
 }

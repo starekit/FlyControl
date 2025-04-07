@@ -9,7 +9,7 @@ typedef struct{
     int16_t gyro_x;
     int16_t gyro_y;
     int16_t gyro_z;
-}MPU6050Data;
+}MPUData;
 
 typedef struct{
     int16_t accel_X;
@@ -19,7 +19,7 @@ typedef struct{
     float gyro_X;
     float gyro_Y;
     float gyro_Z;
-} MPU6050DataUniform;
+} MPUDataUniform;
 
 
 

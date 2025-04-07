@@ -1,4 +1,4 @@
-#include "PWM.h"
+#include "pwm.h"
 using namespace module;
 // TIM1 PWM 初始化函数
 void PWM::initPWM(){

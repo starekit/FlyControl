@@ -1,5 +1,5 @@
-#include "KalmanFilter.h"
-#include "OLED.h"
+#include "kalman_filter.h"
+#include "oled.h"
 using namespace core;
 
 
@@ -37,7 +37,7 @@ void KalManFilter::SetSamplingTime(uint32_t sampling_time){
  * @return EulerAngles 欧拉角
  */
 void KalManFilter::CompuEulerAngle(){
-	mpu6050->GetDataUniform(_data);
+	mpu->GetDataUniform(_data);
     GyroAngle();
 	AccelAngle();
 

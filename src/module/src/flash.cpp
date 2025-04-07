@@ -1,9 +1,9 @@
-#include "WQ25.h"
+#include "flash.h"
 using namespace module;
 /**
  * @brief 初始化GPIO
  */
-void WQ25::initGPIO(){
+void Flash::initGPIO(){
 	// 使能GPIO时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA , ENABLE);
 	GPIO_InitTypeDef InitStruct;
@@ -30,7 +30,7 @@ void WQ25::initGPIO(){
 /**
  * @brief 初始化SPI
  */
-void WQ25::initSPI(){
+void Flash::initSPI(){
 	SPI_InitTypeDef SPI_InitStruct;
 	// 使能SPI时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
@@ -56,14 +56,14 @@ void WQ25::initSPI(){
  * @param byte 发送数据
  * @return 读取到的数据
 */
-uint8_t WQ25::SwapByte(uint8_t byte){
+uint8_t Flash::SwapByte(uint8_t byte){
 	while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_TXE) !=SET); // 等待发送缓冲区空
 	SPI_I2S_SendData(SPI1,byte); // 发送数据
 	while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_RXNE) !=SET); //等待接收完成
 	return SPI_I2S_ReceiveData(SPI1); // 读取接收数据
 }
 
-void WQ25::ReadID(uint8_t *MID, uint16_t *DID){
+void Flash::ReadID(uint8_t *MID, uint16_t *DID){
     SPI_Start();
     SwapByte(JEDEC_ID);//发送读取ID命令
     *MID = SwapByte(DUMMY_BYTE);	//交换接收MID,通过输出参数返回
@@ -73,13 +73,13 @@ void WQ25::ReadID(uint8_t *MID, uint16_t *DID){
     SPI_Stop();
 }
 
-void WQ25::WriteEnable(){
+void Flash::WriteEnable(){
 	SPI_Start();
     SwapByte(WRITE_ENABLE);//发送写使能命令
 	SPI_Stop();
 }
 
-void WQ25::WaitBusy(){
+void Flash::WaitBusy(){
     uint32_t Timeout;
 	SPI_Start();
     SwapByte(READ_STATUS_REGISTER_1);
@@ -92,7 +92,7 @@ void WQ25::WaitBusy(){
     }
 	SPI_Stop();
 }
-void WQ25::PageProgram(uint32_t Address,uint8_t *DataArray,uint16_t Count){
+void Flash::PageProgram(uint32_t Address,uint8_t *DataArray,uint16_t Count){
     uint16_t i;
 
     WriteEnable();
@@ -116,7 +116,7 @@ void WQ25::PageProgram(uint32_t Address,uint8_t *DataArray,uint16_t Count){
  * @param address 读取地址
  * @param pBuffer 读取数据缓冲区
 */
-void WQ25::ReadData(uint32_t Address,uint8_t *pBuffer,uint16_t Count){
+void Flash::ReadData(uint32_t Address,uint8_t *pBuffer,uint16_t Count){
     uint32_t i;
 
 	SPI_Start();	// 开始通信
@@ -133,14 +133,22 @@ void WQ25::ReadData(uint32_t Address,uint8_t *pBuffer,uint16_t Count){
 /**
  * @brief 擦除页数据
  */
-void WQ25::erasureData(){
+void Flash::SectorErase(uint32_t Address){
+	WriteEnable();
+	SPI_Start();
+    SwapByte(SECTOR_ERASE_4KB);
+    SwapByte(Address >> 16);
+    SwapByte(Address >> 8);
+    SwapByte(Address);
+	SPI_Stop();
 
+	WaitBusy();
 }
 /** 
  * @brief 擦除整个芯片
  * @note 擦除整个芯片，擦除时间较长，建议在使用前先擦除
  */
-void WQ25::EraseChip(void){
+void Flash::EraseChip(void){
 	WriteEnable();//写使能
 	SPI_Start();
 	SwapByte(0xC7); // 发送擦除命令(0xC7)
@@ -148,7 +156,7 @@ void WQ25::EraseChip(void){
 	WaitBusy(); // 等待擦除结束
 }
 
-void WQ25::Init_HOLD_WP(){
+void Flash::Init_HOLD_WP(){
 	//INIT HOLD
 	// 使能GPIO时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
