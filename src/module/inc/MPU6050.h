@@ -31,7 +31,7 @@
 
 
 
-#define MPU6050_ADDRESS	0xD0
+#define MPU6050_ADDRESS	0x69
 namespace module{
                                                                                                                                                                                                            
 	
@@ -65,17 +65,19 @@ namespace module{
 
     class MPU6050{
 		private:
-            MPU6050Data *_mpu6050Data;
+           
             void IICInit(void);
 			void MPUInit();
             void DataInit();
             void WriteReg(uint8_t RegAddress, uint8_t Data);
 			uint8_t ReadReg(uint8_t RegAddress);
 			void WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT);
-			void GetData();
+			
 
 
 		public:
+		MPU6050Data *_mpu6050Data;
+		void GetData();
 			MPU6050(){
                 MPU6050_AD0_ON();
                 IICInit();

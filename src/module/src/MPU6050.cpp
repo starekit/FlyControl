@@ -21,7 +21,7 @@ void MPU6050::IICInit(void){
 	/*I2C初始化*/
 	I2C_InitTypeDef I2C_InitStructure;						//定义结构体变量
 	I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;				//模式，选择为I2C模式
-	I2C_InitStructure.I2C_ClockSpeed = 50000;				//时钟速度，选择为50KHz
+	I2C_InitStructure.I2C_ClockSpeed = 10000;				//时钟速度，选择为50KHz
 	I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;		//时钟占空比，选择Tlow/Thigh = 2
 	I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;				//应答，选择使能
 	I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;	//应答地址，选择7位，从机模式下才有效
@@ -33,7 +33,8 @@ void MPU6050::IICInit(void){
 	 
 }
 void MPU6050::MPUInit(void){
-	WriteReg(PWR_MGMT_1, 0x01);				//电源管理寄存器1，取消睡眠模式，选择时钟源为X轴陀螺仪
+
+	WriteReg(PWR_MGMT_1, 0x80);				//电源管理寄存器1，取消睡眠模式，选择时钟源为X轴陀螺仪
 	WriteReg(PWR_MGMT_2, 0x00);				//电源管理寄存器2，保持默认值0，所有轴均不待机
 	WriteReg(SMPLRT_DIV, 0x09);				//采样率分频寄存器，配置采样率
 	WriteReg(CONFIG, 0x06);					//配置寄存器，配置DLPF
@@ -139,6 +140,7 @@ uint8_t MPU6050::GetID(void){
    * @return：none
    */
  void MPU6050::GetData(){
+	// MPU6050_AD0_ON();
 	uint8_t DataH, DataL;						//定义数据高8位和低8位的变量
 	
 	DataH = ReadReg(ACCEL_XOUT_H);				//读取加速度计X轴的高8位数据

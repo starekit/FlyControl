@@ -5,10 +5,16 @@ using namespace module;
  */
 void WQ25::initGPIO(){
 	// 使能GPIO时钟
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA , ENABLE);
 	GPIO_InitTypeDef InitStruct;
 
-	//配置SCK/MOSI引脚为复用推挽输出
+	//初始化PA4
+	InitStruct.GPIO_Pin  = GPIO_Pin_4;
+    InitStruct.GPIO_Mode = GPIO_Mode_Out_PP;
+   	InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &InitStruct);
+
+    //配置SCK/MOSI引脚为复用推挽输出
 	InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_7;
 	InitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
 	InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
@@ -17,8 +23,9 @@ void WQ25::initGPIO(){
 
 	//配置MISO引脚为浮空输入
 	InitStruct.GPIO_Pin = GPIO_Pin_6;
-	InitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;// MISO=PA6
+	InitStruct.GPIO_Mode = GPIO_Mode_IPU;// MISO=PA6
 	InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &InitStruct);
 }
 /**
  * @brief 初始化SPI
@@ -28,28 +35,80 @@ void WQ25::initSPI(){
 	// 使能SPI时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
 	// SPI1配置
-	SPI_InitStruct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStruct.SPI_Mode = SPI_Mode_Master;          // 主模式
+	SPI_InitStruct.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStruct.SPI_DataSize = SPI_DataSize_8b;      // 8位数据
+	SPI_InitStruct.SPI_FirstBit = SPI_FirstBit_MSB;     // MSB先行
+	SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_128; // 波特率分频
 	SPI_InitStruct.SPI_CPOL = SPI_CPOL_Low;             // 时钟极性
 	SPI_InitStruct.SPI_CPHA = SPI_CPHA_1Edge;           // 时钟相位
-	SPI_InitStruct.SPI_NSS = SPI_NSS_Soft | SPI_NSSInternalSoft_Set; // 软件NSS
-	SPI_InitStruct.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_256; // 波特率分频
-	SPI_InitStruct.SPI_FirstBit = SPI_FirstBit_MSB;     // MSB先行
-
+	SPI_InitStruct.SPI_NSS = SPI_NSS_Soft ; // 软件NSS
+	SPI_InitStruct.SPI_CRCPolynomial = 7;	
 	SPI_Init(SPI1, &SPI_InitStruct);
+	
 	SPI_Cmd(SPI1, ENABLE);  // 使能SPI
+
+    SPI_Stop();
 }
+
 /** 
  * @brief SPI读写一个字节
  * @param byte 发送数据
  * @return 读取到的数据
 */
-uint8_t WQ25::SPI_ReadWriteByte(uint8_t byte){
-	while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_TXE) == RESET); // 等待发送缓冲区空
+uint8_t WQ25::SwapByte(uint8_t byte){
+	while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_TXE) !=SET); // 等待发送缓冲区空
 	SPI_I2S_SendData(SPI1,byte); // 发送数据
-	while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_RXNE) == RESET); //等待接收完成
+	while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_RXNE) !=SET); //等待接收完成
 	return SPI_I2S_ReceiveData(SPI1); // 读取接收数据
+}
+
+void WQ25::ReadID(uint8_t *MID, uint16_t *DID){
+    SPI_Start();
+    SwapByte(JEDEC_ID);//发送读取ID命令
+    *MID = SwapByte(DUMMY_BYTE);	//交换接收MID,通过输出参数返回
+	*DID = SwapByte(DUMMY_BYTE);	//交换接收DID高8位
+	*DID<<=8;
+    *DID = SwapByte(DUMMY_BYTE);
+    SPI_Stop();
+}
+
+void WQ25::WriteEnable(){
+	SPI_Start();
+    SwapByte(WRITE_ENABLE);//发送写使能命令
+	SPI_Stop();
+}
+
+void WQ25::WaitBusy(){
+    uint32_t Timeout;
+	SPI_Start();
+    SwapByte(READ_STATUS_REGISTER_1);
+    Timeout = 100000;
+	while((SwapByte(DUMMY_BYTE)& 0x01)==0x01){
+        Timeout--;
+		if(Timeout==0){
+			break;
+		}
+    }
+	SPI_Stop();
+}
+void WQ25::PageProgram(uint32_t Address,uint8_t *DataArray,uint16_t Count){
+    uint16_t i;
+
+    WriteEnable();
+
+	SPI_Start();
+    SwapByte(PAGE_PROGRAM);			//交换发送页编程的指令
+    SwapByte(Address >> 16);		//交换发送地址23~16位
+    SwapByte(Address >> 8);			//交换发送地址15~8位
+    SwapByte(Address);				//交换发送地址低7~0位
+
+    for (i = 0;i<Count;i++){
+        SwapByte(DataArray[i]);
+    }
+	SPI_Stop();
+
+    WaitBusy();
 }
 /** 
  * @brief 读取数据
@@ -57,57 +116,18 @@ uint8_t WQ25::SPI_ReadWriteByte(uint8_t byte){
  * @param address 读取地址
  * @param pBuffer 读取数据缓冲区
 */
-void WQ25::WQ25_ReadData(uint32_t address,uint8_t *pBuffer,uint16_t length){
-	WQ25_CS_LOW(); // 片选引脚拉低，开始通信
-	SPI_ReadWriteByte(0x03); // 发送读取命令
-	SPI_ReadWriteByte((address >> 16) & 0xFF); // 发送地址高8位
-	SPI_ReadWriteByte((address >> 8) & 0xFF); // 发送地址中8位
-	SPI_ReadWriteByte(address & 0xFF); 
-	for(uint16_t i = 0; i < length; i++){
-		pBuffer[i] = SPI_ReadWriteByte(0xFF); // 读取数据
-	}
-	WQ25_CS_HIGH(); // 片选引脚拉高，结束通信
-}
-/**
- * @brief WQ25写使能
- */
-void WQ25::WQ25_WriteEnable(){
-	WQ25_CS_LOW(); // 片选引脚拉低，开始通信
-	SPI_ReadWriteByte(0x06); // 写使能命令(0x06)
-	WQ25_CS_HIGH(); // 片选引脚拉高，结束通信
-}
-/**
- * @brief 等待写入结束
- */
-void WQ25::WQ25_WaitForWriteEnd(){
-	do{
-		WQ25_CS_LOW();
-		SPI_ReadWriteByte(0x06); // 发送读取状态寄存器命令(0x06)
-		WQ25_CS_HIGH();
-	}while(SPI_ReadWriteByte(0xFF)&0x01); // 等待写入结束，检查状态寄存器的BUSY位
-	WQ25_CS_HIGH(); // 片选引脚拉高，结束通信
-}
+void WQ25::ReadData(uint32_t Address,uint8_t *pBuffer,uint16_t Count){
+    uint32_t i;
 
-/**
- * @brief 写入数据
- * 
- * @param address 写入地址
- * @note 写入数据，地址从0开始，长度最大为256字节
- * @param pBuffer 写入数据缓冲区
- * @param length 写入数据长度
- */
-void WQ25::WQ25_WritePage(uint32_t address,uint8_t *pBuffer,uint16_t length){
-	WQ25_WriteEnable(); // 写使能
-	SPI_ReadWriteByte(0x02); // 页编程命令(0x02)
-	SPI_ReadWriteByte((address >> 16) & 0xFF); // 发送地址高8位
-	SPI_ReadWriteByte((address >> 8) & 0xFF); // 发送地址中8位
-	SPI_ReadWriteByte(address & 0xFF); // 发送地址低8位
-
-	for(uint16_t i = 0; i < length; i++){
-		SPI_ReadWriteByte(pBuffer[i]); // 写入数据
+	SPI_Start();	// 开始通信
+	SwapByte(READ_DATA); // 发送读取命令
+	SwapByte(Address >> 16); // 发送地址高8位
+	SwapByte(Address >> 8); // 发送地址中8位
+	SwapByte(Address); 
+	for(i = 0; i < Count; i++){
+		pBuffer[i] = SwapByte(DUMMY_BYTE); // 读取数据
 	}
-	WQ25_CS_HIGH(); 
-	WQ25_WaitForWriteEnd(); // 等待写入结束
+	SPI_Stop();
 }
 
 /**
@@ -120,12 +140,12 @@ void WQ25::erasureData(){
  * @brief 擦除整个芯片
  * @note 擦除整个芯片，擦除时间较长，建议在使用前先擦除
  */
-void WQ25::WQ25_EraseChip(void){
-	WQ25_WriteEnable();//写使能
-	WQ25_CS_LOW(); // 片选引脚拉低，开始通信
-	SPI_ReadWriteByte(0xC7); // 发送擦除命令(0xC7)
-	WQ25_CS_HIGH(); // 片选引脚拉高，结束通信
-	WQ25_WaitForWriteEnd(); // 等待擦除结束
+void WQ25::EraseChip(void){
+	WriteEnable();//写使能
+	SPI_Start();
+	SwapByte(0xC7); // 发送擦除命令(0xC7)
+	SPI_Stop();
+	WaitBusy(); // 等待擦除结束
 }
 
 void WQ25::Init_HOLD_WP(){

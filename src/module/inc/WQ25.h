@@ -6,6 +6,15 @@ namespace module{
 	#define WQ25_HOLD_WP GPIOB 
 	#define WQ25_HOLD_PIN GPIO_Pin_1
 	#define WQ25_WP_PIN GPIO_Pin_0
+	#define JEDEC_ID							0x9F
+	#define DUMMY_BYTE							0xFF
+	#define WRITE_ENABLE 						0x06
+	#define PAGE_PROGRAM						0x02
+	#define READ_STATUS_REGISTER_1				0x05
+	#define READ_DATA 							0x03
+
+	#define	SPI_Start() GPIO_WriteBit(GPIOA,GPIO_Pin_4,Bit_RESET)
+	#define SPI_Stop()  GPIO_WriteBit(GPIOA,GPIO_Pin_4,Bit_SET)
 
 	class WQ25{
 		private:
@@ -16,10 +25,11 @@ namespace module{
 			void initSPI();
 			void Init_HOLD_WP();
 
-			uint8_t SPI_ReadWriteByte(uint8_t byte);
+            uint8_t SwapByte(uint8_t byte);
 			void erasureData();
-			void WQ25_WriteEnable();//写使能
-			void WQ25_WaitForWriteEnd();//等待写入结束
+
+			void WriteEnable();//写使能
+            void WaitBusy();
 		
 		public:
 			WQ25(){
@@ -27,9 +37,11 @@ namespace module{
 				initSPI();
 				Init_HOLD_WP();
 			}
-			void WQ25_EraseChip(void);
-			void WQ25_ReadData(uint32_t address,uint8_t *pBuffer,uint16_t length);
-			void WQ25_WritePage(uint32_t address,uint8_t *pBuffer,uint16_t length);
+            void ReadID(uint8_t *MID, uint16_t *DID);
+			void ReadData(uint32_t address,uint8_t *pBuffer,uint16_t length);
+			void PageProgram(uint32_t Address,uint8_t *DataArray,uint16_t Count);
+            void EraseChip(void);
+			
 	};
 
 }

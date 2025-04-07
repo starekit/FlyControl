@@ -47,9 +47,9 @@ void KalManFilter::CompuEulerAngle(){
 	// eulerAngles->_Euler_Y=ALPHA* gyro_y + (1 - ALPHA) * acc_y;
 	// eulerAngles->_Euler_Z=ALPHA* gyro_z + (1 - ALPHA) * acc_z;
 
-    _eulerAngles->_Euler_X=_accelEulerAngles->_Euler_X;
-    _eulerAngles->_Euler_Y = _accelEulerAngles->_Euler_Y;
-    _eulerAngles->_Euler_Z = _accelEulerAngles->_Euler_Z;
+    // _eulerAngles->_Euler_X=_accelEulerAngles->_Euler_X;
+    // _eulerAngles->_Euler_Y = _accelEulerAngles->_Euler_Y;
+    // _eulerAngles->_Euler_Z = _accelEulerAngles->_Euler_Z;
     // eulerAngles->_Euler_Y += gyro_y;
     // eulerAngles->_Euler_Z += gyro_z;
 
@@ -69,6 +69,10 @@ void KalManFilter::GyroAngle(){
     _gyroEulerAngles->_Euler_X = _data->gyro_X * integral_scope;
 	_gyroEulerAngles->_Euler_Y=_data->gyro_Y * integral_scope;
 	_gyroEulerAngles->_Euler_Z=_data->gyro_Z * integral_scope;
+
+    _eulerAngles->_Euler_X = _gyroEulerAngles->_Euler_X;
+    _eulerAngles->_Euler_Y = _gyroEulerAngles->_Euler_Y;
+    _eulerAngles->_Euler_Z = _gyroEulerAngles->_Euler_Z;
 }
 //--基于加速度计rool_acc
 //计算翻转角 rool=arctan2(ay,az)
